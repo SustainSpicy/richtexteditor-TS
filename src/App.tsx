@@ -13,6 +13,9 @@ import {
   MenuItem,
   ListItemText,
   ListItemIcon,
+  FormControl,
+  Select,
+  InputLabel,
 } from "@mui/material";
 import ImageIcon from "@mui/icons-material/Image";
 import VideocamIcon from "@mui/icons-material/Videocam";
@@ -32,7 +35,7 @@ function App() {
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState({ provider: "youtube", url: "" });
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   const handleOpenMenu = (event: any) => {
@@ -103,10 +106,29 @@ function App() {
   // =====video upload ============
   const handleVideoFileEmbed = () => {
     console.log(videoUrl);
-    if (videoUrl && videoUrl.length > 0) {
-      const videoId = videoUrl[1];
+    const { url, provider } = videoUrl;
+    if (videoUrl && url && url.length > 0) {
+      let videoEmbedUrl;
+      if (provider === "youtube") {
+        let videoId;
+        const urlParts = url.split("/");
+        if (urlParts.length >= 2 && urlParts[urlParts.length - 2] === "watch") {
+          videoId = urlParts[urlParts.length - 1].split("?")[0];
+        } else if (urlParts.includes("youtu.be")) {
+          videoId = urlParts[urlParts.indexOf("youtu.be") + 1];
+        }
+        if (videoId) {
+          // const videoId = url.match(pattern)[1];
+          console.log(`Found video ID: `);
+        } else {
+          console.log("Invalid YouTube URL");
+          return alert("Invalid YouTube URL");
+        }
+        videoEmbedUrl = `https://www.youtube.com/embed/${videoId}`;
+      } else {
+        videoEmbedUrl = `https://www.youtube.com/embed/iBAs3TGIz7M`;
+      }
 
-      const videoEmbedUrl = `https://www.youtube.com/embed/FKqlAbsGlg0`;
       const contentState = editorState.getCurrentContent();
       const contentStateWithEntity = contentState.createEntity(
         "VIDEO",
@@ -121,7 +143,7 @@ function App() {
         AtomicBlockUtils.insertAtomicBlock(newEditorState, entityKey, " ")
       );
     }
-    setVideoUrl("");
+    setVideoUrl({ provider: "youtube", url: "" });
   };
   // ==============================
 
@@ -313,8 +335,23 @@ function App() {
       <ModalContainer open={videoModalOpen} onClose={setVideoModalOpen}>
         <Stack spacing={2}>
           <Typography variant="h6" component="h2">
-            Embed
+            Video Provider
           </Typography>
+          <FormControl fullWidth>
+            <Select
+              id="demo-simple-select"
+              value={videoUrl.provider}
+              onChange={(e) =>
+                setVideoUrl((prevState) => ({
+                  ...prevState,
+                  provider: e.target.value,
+                }))
+              }
+            >
+              <MenuItem value={"youtube"}>Youtube</MenuItem>
+              <MenuItem value={"facebook"}>Facebook</MenuItem>
+            </Select>
+          </FormControl>
           <Typography component="span">Url Link</Typography>
 
           <TextField
@@ -322,8 +359,13 @@ function App() {
             id="outlined-basic"
             size="small"
             variant="outlined"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
+            value={videoUrl.url}
+            onChange={(e) =>
+              setVideoUrl((prevState) => ({
+                ...prevState,
+                url: e.target.value,
+              }))
+            }
             sx={{ background: "#E7F1E9", outline: "none" }}
           />
 
